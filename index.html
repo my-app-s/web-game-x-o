@@ -4,29 +4,271 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <!--my css file-->
-    <link rel="stylesheet" href="templates/css/style.css">
+    <title>Tic-Tac-Toe vs AI</title>
+    <link rel="stylesheet" href="output.css">
 </head>
-<body>
-    
-    <div class="class--global">
-        <div class="class--welcome">
-            <h1>Hello, press button "Start" for game!</h1>
-            <button class="class--button" id="startButton">Start</button>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans select-none p-4">
+
+    <!-- Spacer to center main card -->
+    <div></div>
+
+    <div class="max-w-md w-full p-6 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 flex flex-col items-center">
+        <!-- Scoreboard -->
+        <div class="flex justify-between w-full mb-4 px-2 py-2 bg-slate-900/50 rounded-xl border border-slate-700 text-xs font-semibold text-slate-400">
+            <div class="text-indigo-400">Player (X): <span id="scoreX" class="text-white font-bold">0</span></div>
+            <div class="text-amber-400">Draws: <span id="scoreDraws" class="text-white font-bold">0</span></div>
+            <div class="text-rose-400">AI (O): <span id="scoreO" class="text-white font-bold">0</span></div>
         </div>
 
-        <div class="field--game" id="fieldGame"></div>
+        <!-- Welcome Screen -->
+        <div class="class--welcome text-center flex flex-col items-center space-y-6 w-full">
+            <h1 class="text-2xl font-bold tracking-wide text-indigo-400">Choose AI Difficulty & Play</h1>
+            
+            <!-- Difficulty Selection -->
+            <div class="flex gap-2 w-full justify-center">
+                <button class="diff-btn flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-sm font-semibold rounded-lg border border-slate-600 transition-all" data-diff="easy">Easy</button>
+                <button class="diff-btn flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-sm font-semibold rounded-lg border border-slate-600 transition-all" data-diff="medium">Medium</button>
+                <button class="diff-btn flex-1 py-2 px-3 bg-indigo-600 text-sm font-semibold rounded-lg border border-indigo-500 shadow-md transition-all ring-2 ring-indigo-400" data-diff="hard">Hard</button>
+            </div>
 
-        <div id="messageResult"></div>
+            <button class="w-full py-3 px-6 bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all font-semibold rounded-xl shadow-lg text-white" id="startButton">Start Game</button>
+        </div>
 
-        <div>
-            <button class="class--button" style="display: none; width: 150px;" id="tryAgainButton">Try again</button>
+        <!-- Game Field -->
+        <div class="field--game grid grid-cols-3 gap-3 w-full my-4 hidden" id="fieldGame"></div>
+
+        <!-- Message Result -->
+        <div id="messageResult" class="w-full text-center"></div>
+
+        <!-- Try Again Button -->
+        <div class="w-full mt-4 flex gap-2">
+            <button class="hidden flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all font-semibold rounded-xl shadow-lg text-white text-sm" id="tryAgainButton">Play Again</button>
+            <button class="hidden flex-1 py-3 px-4 bg-rose-600/80 hover:bg-rose-600 active:scale-95 transition-all font-semibold rounded-xl shadow-lg text-white text-sm" id="resetScoreButton">Reset Stats</button>
         </div>
     </div>
 
-    <!--my js file-->
-    <script src="templates/js/app.js"></script>
+    <!-- Footer -->
+    <footer class="footer-info text-center text-xs text-neutral-500 py-6 border-t border-neutral-900 flex flex-col gap-1 select-text w-full">
+        <div>© Copyright 2025 my-app-s(M.R.E)</div>
+        <div>
+            <a href="https://github.com/my-app-s/web-game-x-o" class="text-neutral-400 hover:underline" target="_blank">web-game-x-o</a>
+        </div>
+        <div>Content rights and property belong to their respective authors.</div>
+    </footer>
 
+    <!-- Application Script -->
+    <script>
+        let divWelcome = document.querySelector(".class--welcome");
+        let myBtnStart = document.getElementById("startButton");
+        let fieldGame = document.getElementById("fieldGame");
+        let messageResult = document.getElementById("messageResult");
+        let tryAgainButton = document.getElementById("tryAgainButton");
+        let resetScoreButton = document.getElementById("resetScoreButton");
+        let diffButtons = document.querySelectorAll(".diff-btn");
+
+        let scoreXEl = document.getElementById("scoreX");
+        let scoreOEl = document.getElementById("scoreO");
+        let scoreDrawsEl = document.getElementById("scoreDraws");
+
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let isGameActive = false;
+        let currentPlayer = "X"; 
+        let selectedDifficulty = "hard";
+
+        // Load scores from localStorage
+        let stats = JSON.parse(localStorage.getItem("tictactoe_stats")) || { X: 0, O: 0, draws: 0 };
+        updateScoreboard();
+
+        const winningCombos = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        diffButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                diffButtons.forEach(b => {
+                    b.className = "diff-btn flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-sm font-semibold rounded-lg border border-slate-600 transition-all";
+                });
+                btn.className = "diff-btn flex-1 py-2 px-3 bg-indigo-600 text-sm font-semibold rounded-lg border border-indigo-500 shadow-md transition-all ring-2 ring-indigo-400";
+                selectedDifficulty = btn.dataset.diff;
+            });
+        });
+
+        myBtnStart.addEventListener("click", () => {
+            divWelcome.classList.add("hidden");
+            fieldGame.classList.remove("hidden");
+            isGameActive = true;
+            createBoardUI();
+        });
+
+        function createBoardUI() {
+            fieldGame.innerHTML = "";
+            for (let i = 0; i < 9; i++) {
+                let cell = document.createElement("div");
+                cell.classList.add("h-24", "bg-slate-700", "rounded-xl", "flex", "items-center", "justify-center", "text-4xl", "font-bold", "cursor-pointer", "hover:bg-slate-600", "transition-all", "border", "border-slate-600");
+                cell.dataset.index = i;
+                cell.addEventListener("click", handleCellClick);
+                fieldGame.append(cell);
+            }
+        }
+
+        function handleCellClick(e) {
+            let index = e.target.dataset.index;
+
+            if (!isGameActive || board[index] !== "" || currentPlayer !== "X") return;
+
+            makeMove(index, "X");
+
+            if (checkWin(board, "X")) {
+                endGame("Win user \"X\"! 🎉", "X");
+                return;
+            }
+            if (isBoardFull(board)) {
+                endGame("Draw(", "draw");
+                return;
+            }
+
+            currentPlayer = "O";
+            setTimeout(aiMove, 300);
+        }
+
+        function makeMove(index, player) {
+            board[index] = player;
+            let cell = fieldGame.children[index];
+            cell.innerText = player;
+            cell.classList.add(player === "X" ? "text-indigo-400" : "text-rose-400");
+            cell.style.pointerEvents = "none";
+        }
+
+        function aiMove() {
+            if (!isGameActive) return;
+
+            let emptyIndices = board.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+            if (emptyIndices.length === 0) return;
+
+            let move = null;
+
+            if (selectedDifficulty === "easy") {
+                move = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+            } else if (selectedDifficulty === "medium") {
+                move = findBestMove("O") ?? findBestMove("X") ?? emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+            } else {
+                let bestScore = -Infinity;
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === "") {
+                        board[i] = "O";
+                        let score = minimax(board, 0, false);
+                        board[i] = "";
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = i;
+                        }
+                    }
+                }
+            }
+
+            if (move !== null) {
+                makeMove(move, "O");
+            }
+
+            if (checkWin(board, "O")) {
+                endGame("Win user \"O\" (AI)! 🤖", "O");
+                return;
+            }
+            if (isBoardFull(board)) {
+                endGame("Draw(", "draw");
+                return;
+            }
+
+            currentPlayer = "X";
+        }
+
+        function findBestMove(player) {
+            for (let combo of winningCombos) {
+                let [a, b, c] = combo;
+                let values = [board[a], board[b], board[c]];
+                if (values.filter(v => v === player).length === 2 && values.includes("")) {
+                    return combo[values.indexOf("")];
+                }
+            }
+            return null;
+        }
+
+        function minimax(newBoard, depth, isMaximizing) {
+            if (checkWin(newBoard, "O")) return 10 - depth;
+            if (checkWin(newBoard, "X")) return depth - 10;
+            if (isBoardFull(newBoard)) return 0;
+
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                for (let i = 0; i < newBoard.length; i++) {
+                    if (newBoard[i] === "") {
+                        newBoard[i] = "O";
+                        let evaluation = minimax(newBoard, depth + 1, false);
+                        newBoard[i] = "";
+                        maxEval = Math.max(maxEval, evaluation);
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let i = 0; i < newBoard.length; i++) {
+                    if (newBoard[i] === "") {
+                        newBoard[i] = "X";
+                        let evaluation = minimax(newBoard, depth + 1, true);
+                        newBoard[i] = "";
+                        minEval = Math.min(minEval, evaluation);
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        function checkWin(currentBoard, player) {
+            return winningCombos.some(combo => {
+                return combo.every(index => currentBoard[index] === player);
+            });
+        }
+
+        function isBoardFull(currentBoard) {
+            return currentBoard.every(cell => cell !== "");
+        }
+
+        function updateScoreboard() {
+            scoreXEl.innerText = stats.X;
+            scoreOEl.innerText = stats.O;
+            scoreDrawsEl.innerText = stats.draws;
+            localStorage.setItem("tictactoe_stats", JSON.stringify(stats));
+        }
+
+        function endGame(message, resultType) {
+            isGameActive = false;
+            fieldGame.classList.add("hidden");
+
+            if (resultType === "X") stats.X++;
+            else if (resultType === "O") stats.O++;
+            else if (resultType === "draw") stats.draws++;
+            updateScoreboard();
+            
+            let createMessage = document.createElement("div");
+            createMessage.innerText = message;
+            createMessage.className = "text-xl font-bold text-amber-400 my-4 text-center animate-pulse";
+            
+            messageResult.append(createMessage);
+            tryAgainButton.classList.remove("hidden");
+            resetScoreButton.classList.remove("hidden");
+        }
+
+        tryAgainButton.addEventListener("click", () => {
+            location.reload();
+        });
+
+        resetScoreButton.addEventListener("click", () => {
+            stats = { X: 0, O: 0, draws: 0 };
+            updateScoreboard();
+            location.reload();
+        });
+    </script>
 </body>
 </html>
