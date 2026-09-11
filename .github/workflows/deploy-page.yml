@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'input.css'
   workflow_dispatch:
 
 permissions:
