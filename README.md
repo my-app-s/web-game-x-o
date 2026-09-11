@@ -1,6 +1,13 @@
 # Tic-Tac-Toe vs AI
 
+![Static Badge](https://img.shields.io/badge/HTML5-24214e?logo=HTML5)
+![Static Badge](https://img.shields.io/badge/CSS3-24214e?logo=CSS)
+![Static Badge](https://img.shields.io/badge/JavaScript-24214e?logo=JavaScript)
+![Static Badge](https://img.shields.io/badge/JavaScript-24214e?logo=TailwindCSS)
+
 > Status Github Actions
+> 
+> ![Status GitHub Pages](https://github.com/my-app-s/web-game-x-o/actions/workflows/deploy-page.yml/badge.svg)
 
 Современная реализация классической игры «Крестики-нолики», написанная на чистом JavaScript и стилизованная с помощью **Tailwind CSS** с автоматической сборкой через **Tailwind CLI** и **GitHub Actions**. Игра работает полностью на стороне клиента и включает встроенный алгоритм искусственного интеллекта (ИИ) с настраиваемой сложностью.
 
